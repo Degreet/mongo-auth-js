@@ -12,6 +12,8 @@
   "dependencies": {
     "bcrypt": "^5.0.0",
     "dotenv": "^8.2.0",
-    "mongodb": "^3.6.3"
+    "mongodb": "^3.6.3",
+    "randomstring": "^1.2.1",
+    "use-mongo": "^1.0.0"
   }
 }

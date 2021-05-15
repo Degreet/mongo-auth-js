@@ -1,35 +1,85 @@
-const MongoAuth = require("./MongoAuth.js")
-const useMongo = require("./use-mongo.js")
-const dotenv = require("dotenv")
-dotenv.config()
+const bcrypt = require('bcrypt');
+const randomstring = require('randomstring');
 
-const username = "Node"
-const clusterName = "cluster0-ttfss"
-const password = process.env.MONGO_KEY
-const databaseName = "use-mongo-test"
+module.exports = class MongoAuth {
+	constructor(usersCollection) {
+		if (usersCollection && usersCollection.findOne) {
+			this.usersCollection = usersCollection;
+		}
+	}
 
-useMongo(username, clusterName, password, databaseName).then(async getCollect => {
-  const users = getCollect("users")
-  const mongoAuth = new MongoAuth(users)
+	async findUser(fields) {
+		const usersCollection = this.usersCollection;
+		const candidate = await usersCollection.findOne(fields);
 
-  async function reg() {
-    const candidate = await mongoAuth.reg("username", "password", {
-      age: 3
-    })
-  }
+		if (candidate) return candidate;
+		else return false;
+	}
 
-  async function auth() {
-    const failTry = { login: "Jonh", password: "ewqde" }
-    const successTry = { login: "username", password: "password" }
+	async reg(username, password, otherFields = {}) {
+		const usersCollection = this.usersCollection;
 
-    const failCheck = await mongoAuth.auth(failTry.login, failTry.password)
-    const successCheck = await mongoAuth.auth(successTry.login, successTry.password)
+		if (usersCollection && usersCollection.findOne) {
+			password = bcrypt.hashSync(password, 10);
+			await usersCollection.insertOne({
+				username,
+				password,
+				...otherFields,
+			});
 
-    if (successCheck) {
-      const candidate = successCheck
-      const token = candidate.token
-    }
-  }
+			return true;
+		}
 
-  auth()
-})
+		return false;
+	}
+
+	async auth(username, password) {
+		const usersCollection = this.usersCollection;
+
+		if (usersCollection && usersCollection.findOne) {
+			const candidate = await usersCollection.findOne({ username });
+
+			if (candidate) {
+				const checkPasswords = bcrypt.compareSync(password, candidate.password);
+
+				if (checkPasswords) {
+					const token = randomstring.generate();
+					candidate.token = token;
+
+					usersCollection.updateOne(
+						{ username },
+						{
+							$set: {
+								token,
+							},
+						}
+					);
+
+					return candidate;
+				} else {
+					return false;
+				}
+			}
+
+			return false;
+		}
+
+		return false;
+	}
+
+	async verify(token) {
+		const usersCollection = this.usersCollection;
+
+		if (usersCollection && usersCollection.findOne) {
+			const candidate = await usersCollection.findOne({ token });
+
+			if (candidate) {
+				return candidate;
+			} else {
+				return false;
+			}
+		}
+
+		return false;
+	}
+};
