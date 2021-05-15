@@ -7,11 +7,13 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "Degreet <degreetpro@gmail.com>",
   "license": "ISC",
+  "devDependencies": {
+    "dotenv": "^9.0.2"
+  },
   "dependencies": {
     "bcrypt": "^5.0.0",
-    "dotenv": "^8.2.0",
     "mongodb": "^3.6.3",
     "randomstring": "^1.2.1",
     "use-mongo": "^1.0.0"
